@@ -30,7 +30,6 @@ public class CameraActivity extends Activity {
             toast.show();
         } else {
             //camera works, now do stuff with it
-//            mCamera.setDisplayOrientation(180);
             setCameraDisplayOrientation(this, mOpenCameraId, mCamera);
             this.mPreview = new CameraPreview(this, this.mCamera);
             FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
@@ -106,16 +105,20 @@ public class CameraActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        //no need to anything further with onStop or onDestroy
+        //onPause events will carry over.
         Log.d("Log", "onPause");
         //Shuts down the preview shown on the screen
         if(this.mCamera != null) {
             this.mCamera.stopPreview();
         }
+//      removes images from the framelayout
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.removeAllViews();
         //Calls an internal help method to restore the camera
         releaseCamera();
     }
+
 
 
     /**Help method to release the camera */
@@ -134,22 +137,27 @@ public class CameraActivity extends Activity {
     protected void onResume() {
         super.onResume();
         Log.d("Log", "onResume");
-        // TODO Auto-generated method stub
-        // Create an instance of Camera.
+
+        //Need to reimplement onCreate code since camera is being released in onPause
+        //If this is not done, the surface will create an error
+
+        // re-create instance of camera if lost
         if (this.mCamera == null){
             this.mCamera = getCameraInstance();}
-
+        // if camera is still not displaying, show error to user
         if(this.mCamera == null){
             Toast toast = Toast.makeText(getApplicationContext(), "No camera", Toast.LENGTH_SHORT);
             toast.show();
         } else {
+            //orient camera correctly
+            setCameraDisplayOrientation(this, mOpenCameraId, mCamera);
+            //attach this camera to a preview
             this.mPreview = new CameraPreview(this, this.mCamera);
             FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
             preview.removeAllViews();
+            //after view is cleaned, reattach camerapreview
             preview.addView(this.mPreview);
         }
-
-        super.onResume();
     }
 
 
