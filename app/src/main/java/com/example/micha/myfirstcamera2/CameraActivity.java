@@ -2,6 +2,7 @@ package com.example.micha.myfirstcamera2;
 
 import android.app.Activity;
 import android.hardware.Camera;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Surface;
@@ -9,6 +10,8 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 public class CameraActivity extends Activity {
+    //the android version of the device
+    private final int currentVersion = Build.VERSION.SDK_INT;
     private static int mOpenCameraId;
     private Camera mCamera;
     private CameraPreview mPreview;
@@ -22,20 +25,7 @@ public class CameraActivity extends Activity {
         Log.d("Log", "onCreate");
         setContentView(R.layout.activity_camera);
 
-        if (this.mCamera == null){
-            this.mCamera = getCameraInstance();}
-
-        if(this.mCamera == null){
-            Toast toast = Toast.makeText(getApplicationContext(), "No camera", Toast.LENGTH_SHORT);
-            toast.show();
-        } else {
-            //camera works, now do stuff with it
-            setCameraDisplayOrientation(this, mOpenCameraId, mCamera);
-            this.mPreview = new CameraPreview(this, this.mCamera);
-            FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-            preview.addView(this.mPreview);
-        }
-
+        createCameraPreview();
     }
 
     public static void setCameraDisplayOrientation(Activity activity,
@@ -62,7 +52,6 @@ public class CameraActivity extends Activity {
         }
         camera.setDisplayOrientation(result);
     }
-
 
     /** A safe way to get an instance of the Camera object. Code collected from elsewhere */
     public static Camera getCameraInstance(){
@@ -101,24 +90,34 @@ public class CameraActivity extends Activity {
         }
     }
 
-    /**Method for releasing the camera immediately on pause event*/
     @Override
     protected void onPause() {
         super.onPause();
         //no need to anything further with onStop or onDestroy
         //onPause events will carry over.
         Log.d("Log", "onPause");
-        //Shuts down the preview shown on the screen
-        if(this.mCamera != null) {
-            this.mCamera.stopPreview();
-        }
-//      removes images from the framelayout
-        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-        preview.removeAllViews();
-        //Calls an internal help method to restore the camera
-        releaseCamera();
+
+        removeCameraPreview();
+
     }
 
+    /**Method for releasing the camera immediately on pause event*/
+    private void removeCameraPreview() {
+        //Shuts down the preview shown on the screen
+        if(currentVersion > Build.VERSION_CODES.LOLLIPOP){
+            //using camera 2 api
+        } else {
+            //using camera 1 api
+            if (this.mCamera != null) {
+                this.mCamera.stopPreview();
+            }
+            //removes images from the framelayout
+            FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+            preview.removeAllViews();
+            //Calls an internal help method to restore the camera
+            releaseCamera();
+        }
+    }
 
 
     /**Help method to release the camera */
@@ -140,26 +139,31 @@ public class CameraActivity extends Activity {
 
         //Need to reimplement onCreate code since camera is being released in onPause
         //If this is not done, the surface will create an error
+        createCameraPreview();
 
-        // re-create instance of camera if lost
-        if (this.mCamera == null){
-            this.mCamera = getCameraInstance();}
-        // if camera is still not displaying, show error to user
-        if(this.mCamera == null){
-            Toast toast = Toast.makeText(getApplicationContext(), "No camera", Toast.LENGTH_SHORT);
-            toast.show();
-        } else {
-            //orient camera correctly
-            setCameraDisplayOrientation(this, mOpenCameraId, mCamera);
-            //attach this camera to a preview
-            this.mPreview = new CameraPreview(this, this.mCamera);
-            FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
-            preview.removeAllViews();
-            //after view is cleaned, reattach camerapreview
-            preview.addView(this.mPreview);
-        }
     }
 
+    private void createCameraPreview() {
+        if(currentVersion > Build.VERSION_CODES.LOLLIPOP){
+            //use camera 2 api
+
+        } else {
+            if (this.mCamera == null) {
+                this.mCamera = getCameraInstance();
+            }
+
+            if (this.mCamera == null) {
+                Toast toast = Toast.makeText(getApplicationContext(), "No camera", Toast.LENGTH_SHORT);
+                toast.show();
+            } else {
+                //camera works, now do stuff with it
+                setCameraDisplayOrientation(this, mOpenCameraId, mCamera);
+                this.mPreview = new CameraPreview(this, this.mCamera);
+                FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
+                preview.addView(this.mPreview);
+            }
+        }
+    }
 
 
 }
